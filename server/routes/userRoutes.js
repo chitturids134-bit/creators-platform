@@ -1,4 +1,5 @@
 import express from 'express';
+import { protect } from '../middleware/auth.js';
 import {
   registerUser,
   getAllUsers,
@@ -9,11 +10,13 @@ import {
 
 const router = express.Router();
 
-// User routes
+// Public route - no protection
 router.post('/register', registerUser);
-router.get('/', getAllUsers);
-router.get('/:id', getUserById);
-router.put('/:id', updateUser);
-router.delete('/:id', deleteUser);
+
+// Protected routes - require authentication
+router.get('/', protect, getAllUsers);
+router.get('/:id', protect, getUserById);
+router.put('/:id', protect, updateUser);
+router.delete('/:id', protect, deleteUser);
 
 export default router;
