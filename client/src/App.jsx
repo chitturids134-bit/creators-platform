@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext'; // Import
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import Home from './pages/Home';
@@ -9,27 +10,29 @@ import Dashboard from './pages/Dashboard';
 function App() {
   return (
     <BrowserRouter>
-      <div style={appStyle}>
-        {/* Header appears on all pages */}
-        <Header />
+      <AuthProvider>
+        <div style={appStyle}>
+          {/* Header appears on all pages */}
+          <Header />
 
-        {/* Main content area */}
-        <main style={mainStyle}>
-          <Routes>
-            {/* Define your routes here */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            
-            {/* 404 Page - catches all unmatched routes */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
+          {/* Main content area */}
+          <main style={mainStyle}>
+            <Routes>
+              {/* Define your routes here */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              
+              {/* 404 Page - catches all unmatched routes */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
 
-        {/* Footer appears on all pages */}
-        <Footer />
-      </div>
+          {/* Footer appears on all pages */}
+          <Footer />
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

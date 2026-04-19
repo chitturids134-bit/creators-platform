@@ -1,21 +1,35 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
+  const { user, logout, isAuthenticated } = useAuth();
+
   return (
     <header style={headerStyle}>
       <div style={containerStyle}>
-        {/* Logo/Brand Name */}
         <h1 style={logoStyle}>
           <Link to="/" style={linkStyle}>
-            Creator's Platform
+            Your Platform Name
           </Link>
         </h1>
 
-        {/* Navigation Links */}
-        <nav>
+        <nav style={navStyle}>
           <Link to="/" style={navLinkStyle}>Home</Link>
-          <Link to="/login" style={navLinkStyle}>Login</Link>
-          <Link to="/register" style={navLinkStyle}>Register</Link>
+          
+          {isAuthenticated() ? (
+            <>
+              <Link to="/dashboard" style={navLinkStyle}>Dashboard</Link>
+              <span style={userNameStyle}>Hi, {user.name}</span>
+              <button onClick={logout} style={logoutBtnStyle}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" style={navLinkStyle}>Login</Link>
+              <Link to="/register" style={navLinkStyle}>Register</Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
@@ -51,7 +65,27 @@ const linkStyle = {
 const navLinkStyle = {
   color: 'white',
   textDecoration: 'none',
-  marginLeft: '2rem',
+};
+
+// Add these styles
+const navStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '1.5rem',
+};
+
+const userNameStyle = {
+  color: 'white',
+  fontSize: '0.9rem',
+};
+
+const logoutBtnStyle = {
+  padding: '0.5rem 1rem',
+  backgroundColor: '#dc3545',
+  color: 'white',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer',
 };
 
 export default Header;
