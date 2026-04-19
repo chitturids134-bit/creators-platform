@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const Login = () => {
   const { login } = useAuth(); // Get login function
@@ -65,6 +66,8 @@ const Login = () => {
     // Clear previous error
     setApiError('');
 
+    const {email, password} = formData;
+
     // Validate form
     if (!validateForm()) {
       return;
@@ -74,20 +77,14 @@ const Login = () => {
 
     try {
       // Send login request
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email.trim().toLowerCase(),
-          password: formData.password
-        })
+      const response = await api.post('/api/auth/login', {
+        email,
+        password
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         // Login successful
         
         login(data.user, data.token); // Use context function
