@@ -1,47 +1,109 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const Dashboard = () => {
-  const { user, logout, loading } = useAuth();
+  const { user } = useAuth();
+  const [posts, setPosts] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>;
-  }
+  // Fetch posts when component mounts or page changes
+  useEffect(() => {
+    fetchPosts(currentPage);
+  }, [currentPage]);
 
-  if (!user) {
-    return <Navigate to="/login" />;
+  const fetchPosts = async (page) => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await api.get(`/api/posts?page=${page}&limit=10`);
+      
+      setPosts(response.data.data);
+      setPagination(response.data.pagination);
+    } catch (err) {
+      setError('Failed to load posts');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  if (isLoading) {
+    return <div style={loadingStyle}>Loading posts...</div>;
   }
 
   return (
     <div style={containerStyle}>
+      {/* Header with Create Button */}
       <div style={headerStyle}>
         <h1>Welcome, {user.name}!</h1>
-        <button onClick={logout} style={logoutButtonStyle}>
-          Logout
-        </button>
+        <Link to="/create">
+          <button style={createButtonStyle}>
+            + Create New Post
+          </button>
+        </Link>
       </div>
 
-      <div style={contentStyle}>
-        <div style={cardStyle}>
-          <h2>Your Account</h2>
-          <div style={infoStyle}>
-            <p><strong>Name:</strong> {user.name}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Member Since:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
-          </div>
-        </div>
+      {/* Error Message */}
+      {error && <div style={errorStyle}>{error}</div>}
 
-        <div style={cardStyle}>
-          <h2>Dashboard Features</h2>
-          <p>This is your personalized dashboard. Future features will include:</p>
-          <ul>
-            <li>Create and manage your content</li>
-            <li>View your statistics</li>
-            <li>Edit your profile</li>
-            <li>See your activity</li>
-          </ul>
-        </div>
+      {/* Posts List */}
+      <div style={postsContainerStyle}>
+        {posts.length === 0 ? (
+          <div style={emptyStateStyle}>
+            <p>You haven't created any posts yet.</p>
+            <Link to="/create">Create your first post</Link>
+          </div>
+        ) : (
+          <>
+            {posts.map((post) => (
+              <div key={post._id} style={postCardStyle}>
+                <h3>{post.title}</h3>
+                <p style={contentPreviewStyle}>
+                  {post.content.substring(0, 150)}...
+                </p>
+                <div style={metaStyle}>
+                  <span>{post.category}</span>
+                  <span>{post.status}</span>
+                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+
+            {/* Pagination Controls */}
+            <div style={paginationStyle}>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+                style={paginationButtonStyle}
+              >
+                Previous
+              </button>
+
+              <span style={pageInfoStyle}>
+                Page {pagination.page} of {pagination.totalPages} 
+                ({pagination.total} total posts)
+              </span>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                style={paginationButtonStyle}
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -75,6 +137,17 @@ const logoutButtonStyle = {
   fontWeight: '500',
 };
 
+const createButtonStyle = {
+  padding: '0.6rem 1.2rem',
+  backgroundColor: '#007bff',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontWeight: 600,
+  boxShadow: '0 2px 6px rgba(0,123,255,0.12)'
+};
+
 const contentStyle = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -91,6 +164,82 @@ const cardStyle = {
 const infoStyle = {
   marginTop: '1rem',
   lineHeight: '2',
+};  
+
+const paginationStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginTop: '2rem',
+  padding: '1rem',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+};
+
+const paginationButtonStyle = {
+  padding: '0.5rem 1rem',
+  backgroundColor: '#007bff',
+  color: 'white',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer',
+};
+
+const pageInfoStyle = {
+  color: '#666',
+  fontSize: '0.9rem',
+};
+
+const postCardStyle = {
+  padding: '1.5rem',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  marginBottom: '1rem',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+};
+
+const contentPreviewStyle = {
+  color: '#666',
+  margin: '1rem 0',
+};
+
+const metaStyle = {
+  display: 'flex',
+  gap: '1rem',
+  fontSize: '0.85rem',
+  color: '#999',
+};
+
+const loadingStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '80vh',
+  fontSize: '1.2rem',
+  color: '#666',
+};
+
+const errorStyle = {
+  margin: '1rem 0',
+  padding: '0.75rem 1rem',
+  backgroundColor: '#f8d7da',
+  color: '#842029',
+  borderRadius: '6px',
+  border: '1px solid #f5c2c7',
+};
+
+const postsContainerStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+const emptyStateStyle = {
+  padding: '2rem',
+  textAlign: 'center',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+  color: '#666',
 };
 
 export default Dashboard;
