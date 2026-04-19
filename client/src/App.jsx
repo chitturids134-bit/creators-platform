@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CreatePost from './pages/CreatePost';
+import EditPost from './pages/EditPost';
 
 function App() {
   return (
@@ -66,6 +67,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <CreatePost />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route 
+                path="/edit/:id" 
+                element={
+                  <ProtectedRoute>
+                    <EditPost />
                   </ProtectedRoute>
                 } 
               />
