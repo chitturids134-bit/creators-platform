@@ -1,0 +1,478 @@
+{
+  "info": {
+    "_postman_id": "0a825e99-e44d-4435-af9e-0586883c8745",
+    "name": "Creator's Platform API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52047681",
+    "_collection_link": "https://go.postman.co/collection/52047681-0a825e99-e44d-4435-af9e-0586883c8745?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Health: status 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Health: has message and timestamp\", () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('message');",
+                  "  pm.expect(json).to.have.property('timestamp');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/api/health",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login: status 200\", () => pm.response.to.have.status(200));",
+                  "",
+                  "let json;",
+                  "try { json = pm.response.json(); } catch (e) { json = {}; }",
+                  "",
+                  "pm.test(\"Login: success true\", () => {",
+                  "  pm.expect(json).to.have.property('success');",
+                  "  pm.expect(json.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Login: token exists and saved\", () => {",
+                  "  const token = json.token ?? json.data?.token ?? json.data?.accessToken ?? null;",
+                  "  pm.expect(token, \"token exists\").to.be.a('string');",
+                  "  pm.environment.set(\"authToken\", token);",
+                  "});",
+                  "",
+                  "// Optional: save user id/name if returned",
+                  "if (json.user) {",
+                  "  pm.environment.set(\"currentUserId\", json.user.id ?? json.user._id);",
+                  "  pm.environment.set(\"currentUserName\", json.user.name ?? \"\");",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"test@example.com\",\r\n    \"password\": \"Password123!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/auth/login",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Register: status 201\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "const regJson = pm.response.json();",
+                  "pm.test(\"Register: success true\", () => pm.expect(regJson.success).to.be.true);",
+                  "",
+                  "// Auto-login using same body to save token",
+                  "let req;",
+                  "try { req = JSON.parse(pm.request.body.raw); } catch(e){ req = null; }",
+                  "if (req && req.email && req.password) {",
+                  "  pm.sendRequest({",
+                  "    url: pm.environment.get(\"baseURL\") + \"/api/auth/login\",",
+                  "    method: \"POST\",",
+                  "    header: { \"Content-Type\": \"application/json\" },",
+                  "    body: { mode: \"raw\", raw: JSON.stringify({ email: req.email, password: req.password }) }",
+                  "  }, (err, res) => {",
+                  "    if (err) { console.error(\"Auto-login error\", err); return; }",
+                  "    try {",
+                  "      const json = res.json();",
+                  "      const token = json.token ?? json.data?.token ?? json.data?.accessToken ?? null;",
+                  "      if (token) pm.environment.set(\"authToken\", token);",
+                  "    } catch(e){ console.error(e); }",
+                  "  });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Test User\",\r\n    \"email\": \"test+{{randomInt}}@example.com\",\r\n    \"password\": \"Password123!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/users/register",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "Get All Posts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"GetPosts: status 200\", () => pm.response.to.have.status(200));\r",
+                  "\r",
+                  "let json;\r",
+                  "try { json = pm.response.json(); } catch (e) { json = {}; }\r",
+                  "\r",
+                  "pm.test(\"GetPosts: success true\", () => {\r",
+                  "  pm.expect(json).to.have.property('success');\r",
+                  "  pm.expect(json.success).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"GetPosts: posts array exists\", () => {\r",
+                  "  pm.expect(json).to.have.property('posts');\r",
+                  "  pm.expect(Array.isArray(json.posts)).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"GetPosts: pagination present\", () => {\r",
+                  "  pm.expect(json).to.have.property('pagination');\r",
+                  "  pm.expect(json.pagination).to.have.property('page');\r",
+                  "  pm.expect(json.pagination).to.have.property('totalPages');\r",
+                  "});\r",
+                  "\r",
+                  "// Optionally save first post id for later tests\r",
+                  "if (Array.isArray(json.posts) && json.posts.length > 0) {\r",
+                  "  pm.environment.set(\"firstPostId\", json.posts[0]._id ?? json.posts[0].id);\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/posts?page=1&limit=10",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "posts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"CreatePost: status 200 or 201\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));\r",
+                  "\r",
+                  "let json;\r",
+                  "try { json = pm.response.json(); } catch (e) { json = {}; }\r",
+                  "\r",
+                  "pm.test(\"CreatePost: success true\", () => {\r",
+                  "  pm.expect(json).to.have.property('success');\r",
+                  "  pm.expect(json.success).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "// Extract created post object (support common shapes)\r",
+                  "const created = json.data ?? json.post ?? json;\r",
+                  "const postObj = created?.data ?? created;\r",
+                  "const id = postObj?._id ?? postObj?.id ?? null;\r",
+                  "\r",
+                  "pm.test(\"CreatePost: created id exists\", () => pm.expect(id).to.be.ok);\r",
+                  "if (id) pm.environment.set(\"createdPostId\", id);\r",
+                  "\r",
+                  "pm.test(\"CreatePost: has title and content\", () => {\r",
+                  "  pm.expect(postObj).to.have.property('title');\r",
+                  "  pm.expect(postObj).to.have.property('content');\r",
+                  "});\r",
+                  "\r",
+                  "// Optional: check returned title matches request\r",
+                  "try {\r",
+                  "  const reqTitle = pm.request.body && JSON.parse(pm.request.body.raw).title;\r",
+                  "  if (reqTitle !== undefined) pm.test(\"Title matches request\", () => pm.expect(postObj?.title).to.eql(reqTitle));\r",
+                  "} catch (e) { /* ignore parse errors */ }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Automated Test Post {{timestamp}}\",\r\n    \"content\": \"This is a test post created by automated tests.\",\r\n    \"category\": \"Technology\",\r\n    \"status\": \"draft\",\r\n    \"coverImage\": null\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/posts",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"UpdatePost: status 200\", () => pm.response.to.have.status(200));\r",
+                  "\r",
+                  "let json;\r",
+                  "try { json = pm.response.json(); } catch (e) { json = {}; }\r",
+                  "\r",
+                  "pm.test(\"UpdatePost: success true\", () => {\r",
+                  "  pm.expect(json).to.have.property('success');\r",
+                  "  pm.expect(json.success).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "// Support common response shapes\r",
+                  "const updated = json.data ?? json.post ?? json;\r",
+                  "pm.test(\"UpdatePost: returned id matches createdPostId\", () => {\r",
+                  "  const returnedId = updated?._id ?? updated?.id ?? null;\r",
+                  "  pm.expect(String(returnedId)).to.eql(String(pm.environment.get(\"createdPostId\")));\r",
+                  "});\r",
+                  "\r",
+                  "// Verify title updated if provided in request\r",
+                  "try {\r",
+                  "  const reqBody = pm.request.body && JSON.parse(pm.request.body.raw);\r",
+                  "  if (reqBody && reqBody.title) {\r",
+                  "    pm.test(\"UpdatePost: title updated\", () => {\r",
+                  "      const returnedTitle = updated?.title ?? updated?.data?.title;\r",
+                  "      pm.expect(returnedTitle).to.eql(reqBody.title);\r",
+                  "    });\r",
+                  "  }\r",
+                  "} catch (e) { /* ignore parse errors */ }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Updated Test Post {{timestamp}}\",\r\n    \"content\": \"Updated content by tests.\",\r\n    \"category\": \"Technology\",\r\n    \"status\": \"published\",\r\n    \"coverImage\": null\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/api/posts/{{createdPostId}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{createdPostId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"DeletePost: status 200\", () => pm.response.to.have.status(200));\r",
+                  "\r",
+                  "let json;\r",
+                  "try { json = pm.response.json(); } catch (e) { json = {}; }\r",
+                  "\r",
+                  "pm.test(\"DeletePost: success true\", () => {\r",
+                  "  pm.expect(json).to.have.property('success');\r",
+                  "  pm.expect(json.success).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"DeletePost: returned id equals createdPostId\", () => {\r",
+                  "  const returnedId = json.data?.id ?? json.data?._id ?? json.id ?? json._id;\r",
+                  "  pm.expect(String(returnedId)).to.eql(String(pm.environment.get(\"createdPostId\")));\r",
+                  "  // clear saved id on successful delete\r",
+                  "  if (returnedId) pm.environment.unset(\"createdPostId\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/api/posts/{{createdPostId}}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{createdPostId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

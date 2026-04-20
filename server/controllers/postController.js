@@ -1,5 +1,6 @@
 import Post from '../models/Post.js';
 import ApiError from '../utils/ApiError.js';
+import { getIO } from '../utils/socket.js';
 
 // @desc    Create new post
 // @route   POST /api/posts
@@ -22,6 +23,23 @@ export const createPost = async (req, res, next) => {
       coverImage,
       author: req.user._id // From protect middleware
     });
+
+    // Emit real-time event to connected clients about the new post
+    try {
+      const io = getIO();
+      if (io) {
+        io.emit('newPost', {
+          message: `New post created by ${req.user?.name ?? 'someone'}`,
+          post: {
+            id: post._id,
+            title: post.title,
+            author: req.user?.name ?? ''
+          }
+        });
+      }
+    } catch (emitErr) {
+      console.error('Error emitting newPost event:', emitErr);
+    }
 
     res.status(201).json({
       success: true,
@@ -91,6 +109,19 @@ export const deletePost = async (req, res, next) => {
     // Delete the post
     await post.deleteOne();
 
+    // Emit deletion event to clients
+    try {
+      const io = getIO();
+      if (io) {
+        io.emit('deletePost', {
+          message: `A post was deleted`,
+          id: req.params.id
+        });
+      }
+    } catch (emitErr) {
+      console.error('Error emitting deletePost event:', emitErr);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Post deleted successfully',
@@ -122,15 +153,35 @@ export const updatePost = async (req, res, next) => {
 
     // Update fields
     const { title, content, category, status, coverImage } = req.body;
-    
+
     if (title) post.title = title;
     if (content) post.content = content;
     if (category) post.category = category;
     if (status) post.status = status;
-    if (coverImage) post.coverImage = coverImage;
+
+    // Allow clearing the coverImage when the client explicitly provides null or empty string
+    if (Object.prototype.hasOwnProperty.call(req.body, 'coverImage')) {
+      post.coverImage = coverImage || null;
+    }
 
     // Save updated post
     const updatedPost = await post.save();
+
+    // Emit update event to clients
+    try {
+      const io = getIO();
+      if (io) {
+        io.emit('updatePost', {
+          message: `Post updated by ${req.user?.name ?? 'someone'}`,
+          post: {
+            id: updatedPost._id,
+            title: updatedPost.title
+          }
+        });
+      }
+    } catch (emitErr) {
+      console.error('Error emitting updatePost event:', emitErr);
+    }
 
     res.status(200).json({
       success: true,
