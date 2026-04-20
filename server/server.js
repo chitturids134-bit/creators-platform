@@ -7,6 +7,7 @@ import connectDB from './config/database.js';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import uploadRoutes from './routes/upload.js';
 import ApiError from './utils/ApiError.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -31,6 +32,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check endpoint (keep this for testing)
 app.get('/api/health', (req, res) => {
