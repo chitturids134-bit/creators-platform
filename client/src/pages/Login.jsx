@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { toast } from 'react-toastify';
 
 const Login = () => {
   const { login } = useAuth(); // Get login function
@@ -96,6 +97,8 @@ const Login = () => {
         // Login failed
         setApiError(data.message || 'Login failed. Please try again.');
       }
+
+      toast.success('Login successful!');
 
     } catch (error) {
       console.error('Login error:', error);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { toast } from 'react-toastify';
 
 const EditPost = () => {
   const { id } = useParams(); // Get post ID from URL
@@ -59,10 +60,12 @@ const EditPost = () => {
       
       if (response.data.success) {
         // Redirect to dashboard after successful update
+        toast.success('Post updated successfully');
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update post');
+      const msg = err.response?.data?.message || 'Failed to update post';
+      setError(msg);
       setIsSaving(false);
     }
   };
