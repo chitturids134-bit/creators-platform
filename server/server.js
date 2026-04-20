@@ -10,6 +10,7 @@ import postRoutes from './routes/postRoutes.js';
 import uploadRoutes from './routes/upload.js';
 import ApiError from './utils/ApiError.js';
 import errorHandler from './middleware/errorHandler.js';
+import timingMiddleware from './middleware/timing.js';
 
 // Load environment variables
 dotenv.config();
@@ -27,6 +28,9 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 app.use(express.json());
+
+// Request timing (logs durations and slow requests)
+app.use(timingMiddleware);
 
 // Routes
 app.use('/api/users', userRoutes);

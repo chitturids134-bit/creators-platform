@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true,
       match: [
         /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
         'Please provide a valid email'
@@ -25,6 +26,9 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
       select: false // Don't return password in queries by default
+    },
+    avatar: {
+      type: String,
     }
   },
   { 
