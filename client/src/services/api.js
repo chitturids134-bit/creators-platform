@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -37,23 +38,32 @@ api.interceptors.response.use(
   },
   (error) => {
     // Handle error responses
-    
-    // Check if error is 401 Unauthorized
-    if (error.response && error.response.status === 401) {
-      // Token is invalid or expired
-      
-      // Clear localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      
-      // Redirect to login
-      window.location.href = '/login';
-      
-      // Show message (optional)
-      console.log('Session expired. Please login again.');
+    // If server responded, show appropriate toast based on status
+    if (error.response) {
+      const status = error.response.status;
+      const serverMessage = error.response.data?.message;
+
+      if (status === 401) {
+        // Token is invalid or expired
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        toast.error(serverMessage || 'Session expired. Please login again.');
+      } else if (status === 400) {
+        toast.error(serverMessage || 'Validation failed');
+      } else if (status === 403) {
+        toast.error(serverMessage || "You don't have permission to perform this action");
+      } else if (status === 404) {
+        toast.error(serverMessage || 'Resource not found');
+      } else if (status >= 500) {
+        toast.error(serverMessage || 'Something went wrong. Please try again.');
+      }
+    } else {
+      // Network or other error without response
+      toast.error(error.message || 'Network error. Please check your connection.');
     }
-    
-    // Return the error for component to handle
+
+    // Return the error for component to handle (components may set inline UI state)
     return Promise.reject(error);
   }
 );

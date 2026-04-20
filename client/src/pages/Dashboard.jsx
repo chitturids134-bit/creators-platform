@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { toast } from 'react-toastify';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -56,12 +57,13 @@ const Dashboard = () => {
           total: prev.total - 1
         }));
 
-        // Optional: Show success message
-        alert('Post deleted successfully');
+        // Show success toast
+        toast.success('Post deleted successfully');
       }
     } catch (error) {
       console.error('Delete error:', error);
-      alert(error.response?.data?.message || 'Failed to delete post');
+      // Interceptor will show toast; set inline error state if needed
+      setError(error.response?.data?.message || 'Failed to delete post');
     }
   };
 
