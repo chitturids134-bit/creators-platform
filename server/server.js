@@ -1,10 +1,14 @@
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/database.js';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import ApiError from './utils/ApiError.js';
+import errorHandler from './middleware/errorHandler.js';
 
 // Load environment variables
 dotenv.config();
@@ -37,7 +41,38 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
+// 404 handler for unknown API routes
+app.use((req, res, next) => {
+  next(new ApiError(404, 'Not Found'));
+});
+
+// Centralized error handler (must be after routes)
+app.use(errorHandler);
+
+// Create HTTP server from Express app
+const httpServer = createServer(app);
+
+// Attach Socket.io to HTTP server
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log(`✅ User connected: ${socket.id}`);
+
+  // Handle disconnection
+  socket.on('disconnect', (reason) => {
+    console.log(`❌ User disconnected: ${socket.id} (${reason})`);
+  });
+});
+
+// Start the server
+httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🔌 Socket.io ready for connections`);
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import socket from '../services/socket';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 
@@ -16,6 +17,34 @@ const Dashboard = () => {
   useEffect(() => {
     fetchPosts(currentPage);
   }, [currentPage]);
+
+  useEffect(() => {
+    // Connect when component mounts (user is logged in)
+    socket.connect();
+
+    // Listen for successful connection
+    socket.on('connect', () => {
+      console.log('🔌 Socket connected:', socket.id);
+    });
+
+    // Listen for disconnection
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Socket disconnected:', reason);
+    });
+
+    // Listen for connection errors
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+    });
+
+    // Cleanup when component unmounts
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.disconnect();
+    };
+  }, []);
 
   const fetchPosts = async (page) => {
     setIsLoading(true);
