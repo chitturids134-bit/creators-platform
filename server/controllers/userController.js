@@ -1,28 +1,23 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
+import ApiError from '../utils/ApiError.js';
 
 // @desc    Register a new user
 // @route   POST /api/users/register
 // @access  Public
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
     // 1. Validate all required fields are provided
     if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide all required fields: name, email, and password'
-      });
+      throw new ApiError(400, 'Please provide all required fields: name, email, and password');
     }
 
     // 2. Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'User with this email already exists'
-      });
+      throw new ApiError(400, 'User with this email already exists');
     }
 
     // 3. Hash the password for security
@@ -46,18 +41,14 @@ export const registerUser = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error during registration',
-      error: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Public (will be protected later with auth)
-export const getAllUsers = async (req, res) => {
+export const getAllUsers = async (req, res, next) => {
   try {
     // Fetch all users, excluding password field
     const users = await User.find().select('-password');
@@ -69,18 +60,14 @@ export const getAllUsers = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching users',
-      error: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Get single user by ID
 // @route   GET /api/users/:id
 // @access  Public (will be protected later)
-export const getUserById = async (req, res) => {
+export const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -89,10 +76,7 @@ export const getUserById = async (req, res) => {
 
     // Check if user exists
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      throw new ApiError(404, 'User not found');
     }
 
     res.status(200).json({
@@ -101,18 +85,14 @@ export const getUserById = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching user',
-      error: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Update user
 // @route   PUT /api/users/:id
 // @access  Private (will add auth later)
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, email } = req.body;
@@ -121,10 +101,7 @@ export const updateUser = async (req, res) => {
     const user = await User.findById(id);
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      throw new ApiError(404, 'User not found');
     }
 
     // Update fields if provided
@@ -144,18 +121,14 @@ export const updateUser = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error updating user',
-      error: error.message
-    });
+    next(error);
   }
 };
 
 // @desc    Delete user
 // @route   DELETE /api/users/:id
 // @access  Private (will add auth later)
-export const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -163,10 +136,7 @@ export const deleteUser = async (req, res) => {
     const user = await User.findByIdAndDelete(id);
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      throw new ApiError(404, 'User not found');
     }
 
     res.status(200).json({
@@ -175,10 +145,6 @@ export const deleteUser = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting user',
-      error: error.message
-    });
+    next(error);
   }
 };

@@ -2,8 +2,8 @@ const Footer = () => {
   return (
     <footer style={footerStyle}>
       <div style={containerStyle}>
-        <p>&copy; 2024 Creator's Platform. All rights reserved.</p>
-        <p>Built by John Doe</p>
+        <p>&copy; 2026 Creator's Platform. All rights reserved.</p>
+        <p>Built by Rubhak</p>
       </div>
     </footer>
   );

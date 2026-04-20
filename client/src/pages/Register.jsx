@@ -139,8 +139,9 @@ const Register = () => {
     } catch (error) {
       // Network or other error
       console.error('Registration error:', error);
-      const msg = 'Unable to connect to server. Please check your connection and try again.';
+      const msg = error.response?.data?.message || error.message || 'Unable to connect to server. Please check your connection and try again.';
       setApiError(msg);
+      toast.error(msg);
     } finally {
       // Stop loading regardless of success/failure
       setIsLoading(false);

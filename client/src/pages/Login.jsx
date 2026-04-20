@@ -102,7 +102,9 @@ const Login = () => {
 
     } catch (error) {
       console.error('Login error:', error);
-      setApiError('Unable to connect to server. Please try again.');
+      const serverMessage = error.response?.data?.message || error.message || 'Unable to connect to server. Please try again.';
+      setApiError(serverMessage);
+      toast.error(serverMessage);
     } finally {
       setIsLoading(false);
     }
