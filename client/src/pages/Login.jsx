@@ -147,7 +147,7 @@ const Login = () => {
               autoComplete="email"
             />
             {errors.email && (
-              <span style={errorTextStyle}>{errors.email}</span>
+                <span role="alert" style={errorTextStyle}>{errors.email}</span>
             )}
           </div>
 
@@ -168,7 +168,7 @@ const Login = () => {
               autoComplete="current-password"
             />
             {errors.password && (
-              <span style={errorTextStyle}>{errors.password}</span>
+                <span role="alert" style={errorTextStyle}>{errors.password}</span>
             )}
           </div>
 

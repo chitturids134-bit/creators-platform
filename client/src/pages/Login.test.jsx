@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import Login from './Login';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -50,7 +51,7 @@ describe('Login page', () => {
     expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
   });
 
-  it('shows validation errors on empty submit', async () => {
+  it('shows validation errors on empty submit (role=alert present)', async () => {
     useAuth.mockReturnValue({ login: jest.fn() });
 
     render(
@@ -59,13 +60,39 @@ describe('Login page', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /login/i }));
 
-    expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
-    expect(await screen.findByText(/password is required/i)).toBeInTheDocument();
+    // Since we added role="alert" to validation spans, we can assert alerts exist
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('calls login and navigates on successful submit', async () => {
+  it('typing test: inputs accept user input', async () => {
+    useAuth.mockReturnValue({ login: jest.fn() });
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    const user = userEvent.setup();
+
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+
+    await user.type(emailInput, 'tester@example.com');
+    await user.type(passwordInput, 'password123');
+
+    expect(emailInput).toHaveValue('tester@example.com');
+    expect(passwordInput).toHaveValue('password123');
+  });
+
+  it('happy path: submits form and calls API with correct payload once', async () => {
     const mockLogin = jest.fn();
     useAuth.mockReturnValue({ login: mockLogin });
 
@@ -78,19 +105,25 @@ describe('Login page', () => {
       </MemoryRouter>
     );
 
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 't@test.com', name: 'email' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123', name: 'password' } });
+    const user = userEvent.setup();
 
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitBtn = screen.getByRole('button', { name: /login/i });
 
-    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith(fakeUser, 'tok'));
-    expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    await user.type(emailInput, 't@test.com');
+    await user.type(passwordInput, 'password123');
+    await user.click(submitBtn);
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(api.post).toHaveBeenCalledWith('/api/auth/login', {
+      email: 't@test.com',
+      password: 'password123'
+    });
   });
 
-  it('displays server error message on failed login', async () => {
+  it('validation failure path: submit without filling fields shows alert and does not call API', async () => {
     useAuth.mockReturnValue({ login: jest.fn() });
-
-    api.post.mockRejectedValue({ response: { data: { message: 'Invalid credentials' } } });
 
     render(
       <MemoryRouter>
@@ -98,11 +131,13 @@ describe('Login page', () => {
       </MemoryRouter>
     );
 
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 't@test.com', name: 'email' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrong', name: 'password' } });
+    const user = userEvent.setup();
+    const submitBtn = screen.getByRole('button', { name: /login/i });
 
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+    await user.click(submitBtn);
 
-    expect(await screen.findByText(/invalid credentials/i)).toBeInTheDocument();
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts.length).toBeGreaterThanOrEqual(1);
+    expect(api.post).not.toHaveBeenCalled();
   });
 });

@@ -12,7 +12,12 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "setupFilesAfterFramework": ["./src/setupTests.js"]
+    "setupFiles": [
+      "<rootDir>/src/setupTests.js"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/jestSetupAfterEnv.js"
+    ]
   },
   "dependencies": {
     "axios": "^1.13.6",
