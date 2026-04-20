@@ -19,4 +19,4 @@ const timingMiddleware = (req, res, next) => {
   next();
 };
 
-export default timingMiddleware;
+module.exports = timingMiddleware;

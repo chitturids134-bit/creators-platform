@@ -1,7 +1,7 @@
-import ApiError from '../utils/ApiError.js';
+const ApiError = require('../utils/ApiError');
 
 // Centralized error handling middleware
-export default function errorHandler(err, req, res, next) {
+function errorHandler(err, req, res, next) {
   // If error is an instance of ApiError use provided statusCode, else 500
   const statusCode = err.statusCode || 500;
 
@@ -16,3 +16,5 @@ export default function errorHandler(err, req, res, next) {
     message: err.message || 'Server Error'
   });
 }
+
+module.exports = errorHandler;
