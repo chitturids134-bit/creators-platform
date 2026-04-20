@@ -52,9 +52,22 @@ const Dashboard = () => {
 
     try {
       const response = await api.get(`/api/posts?page=${page}&limit=10`);
-      
-      setPosts(response.data.data);
-      setPagination(response.data.pagination);
+      // Support multiple response shapes: { posts: [...] }, { data: [...] }, or direct array
+      const postsData = response.data?.posts ?? response.data?.data ?? response.data ?? [];
+      setPosts(Array.isArray(postsData) ? postsData : []);
+
+      // Normalize pagination and add convenient flags used by the UI
+      const rawPagination = response.data?.pagination ?? {};
+      const pageNum = rawPagination.page ?? page;
+      const totalPages = rawPagination.totalPages ?? Math.ceil((rawPagination.total ?? 0) / (rawPagination.limit ?? 10));
+
+      setPagination({
+        ...rawPagination,
+        page: pageNum,
+        totalPages,
+        hasPrevPage: pageNum > 1,
+        hasNextPage: pageNum < totalPages
+      });
     } catch (err) {
       setError('Failed to load posts');
       console.error(err);

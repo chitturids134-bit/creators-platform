@@ -40,39 +40,31 @@ export const createPost = async (req, res, next) => {
 // @access  Private
 export const getPosts = async (req, res, next) => {
   try {
-    // Get page and limit from query params (with defaults)
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    
-    // Calculate skip value
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit) || 20, 1);
     const skip = (page - 1) * limit;
 
-    // Get posts for logged-in user only
-    const posts = await Post.find({ author: req.user._id })
-      .sort({ createdAt: -1 }) // Newest first
-      .skip(skip)
-      .limit(limit)
-      .populate('author', 'name email'); // Include author info
+    const [posts, total] = await Promise.all([
+      Post.find()
+        .select('title content author createdAt coverImage')
+        .populate('author', 'name avatar')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Post.countDocuments()
+    ]);
 
-    // Get total count for pagination
-    const total = await Post.countDocuments({ author: req.user._id });
-
-    // Calculate total pages
-    const totalPages = Math.ceil(total / limit);
-
-    res.status(200).json({
+    res.json({
       success: true,
-      data: posts,
+      posts,
       pagination: {
         page,
         limit,
         total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
+        totalPages: Math.ceil(total / limit)
       }
     });
-
   } catch (error) {
     console.error('Get posts error:', error);
     next(error);
@@ -158,24 +150,16 @@ export const updatePost = async (req, res, next) => {
 export const getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id)
-      .populate('author', 'name email');
+      .populate('author', 'name email avatar')
+      .lean();
 
     if (!post) {
-      throw new ApiError(404, 'Post not found');
+      return next(new ApiError(404, 'Post not found'));
     }
 
-    // Check ownership
-    if (post.author._id.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, 'Not authorized to view this post');
-    }
-
-    res.status(200).json({
-      success: true,
-      data: post
-    });
-
+    res.json({ success: true, post });
   } catch (error) {
-    console.error('Get post error:', error);
+    console.error('Get post by id error:', error);
     next(error);
   }
 };
