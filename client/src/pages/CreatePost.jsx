@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { toast } from 'react-toastify';
+import ImageUpload from '../components/ImageUpload';
 
 const CreatePost = () => {
   const [formData, setFormData] = useState({
@@ -12,7 +13,7 @@ const CreatePost = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+  const [image, setImage] = useState(null);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -20,6 +21,12 @@ const CreatePost = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleUpload = (formData) => {
+    // In Lesson 4.7, you'll send this formData to the backend
+    // For now, just log it to confirm it works
+    console.log('FormData ready:', formData.get('image'));
   };
 
   const handleSubmit = async (e) => {
@@ -117,6 +124,7 @@ const CreatePost = () => {
             {isLoading ? 'Creating...' : 'Create Post'}
           </button>
         </form>
+        <ImageUpload onUpload={handleUpload} />
       </div>
     </div>
   );
