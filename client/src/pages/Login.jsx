@@ -101,7 +101,9 @@ const Login = () => {
       toast.success('Login successful!');
 
     } catch (error) {
-      console.error('Login error:', error);
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Login error:', error);
+      }
       const serverMessage = error.response?.data?.message || error.message || 'Unable to connect to server. Please try again.';
       setApiError(serverMessage);
       toast.error(serverMessage);
