@@ -27,9 +27,104 @@ const Dashboard = () => {
       console.log('🔌 Socket connected:', socket.id);
     });
 
+    // Listen for new post events: show toast and refresh first page
+    socket.on('newPost', async (data) => {
+      console.log('socket event received: newPost', data);
+      try {
+        const message = data?.message ?? `New post created`;
+        toast.success(message);
+
+        // Refresh first page so the new post appears without manual refresh
+        try {
+          const resp = await api.get('/api/posts?page=1&limit=10');
+          const postsData = resp.data?.posts ?? resp.data?.data ?? resp.data ?? [];
+          setPosts(Array.isArray(postsData) ? postsData : []);
+
+          const rawPagination = resp.data?.pagination ?? {};
+          const pageNum = rawPagination.page ?? 1;
+          const totalPages = rawPagination.totalPages ?? Math.ceil((rawPagination.total ?? 0) / (rawPagination.limit ?? 10));
+
+          setPagination({
+            ...rawPagination,
+            page: pageNum,
+            totalPages,
+            hasPrevPage: pageNum > 1,
+            hasNextPage: pageNum < totalPages
+          });
+        } catch (fetchErr) {
+          console.error('Error refreshing posts after newPost event', fetchErr);
+        }
+      } catch (e) {
+        console.error('Error handling newPost event', e);
+      }
+    });
+
     // Listen for disconnection
     socket.on('disconnect', (reason) => {
       console.log('❌ Socket disconnected:', reason);
+    });
+
+    // Listen for post updates and deletions: refresh first page
+    socket.on('updatePost', async (data) => {
+      console.log('socket event received: updatePost', data);
+      try {
+        const message = data?.message ?? 'A post was updated';
+        toast.info(message);
+
+        // Refresh first page
+        try {
+          const resp = await api.get('/api/posts?page=1&limit=10');
+          const postsData = resp.data?.posts ?? resp.data?.data ?? resp.data ?? [];
+          setPosts(Array.isArray(postsData) ? postsData : []);
+
+          const rawPagination = resp.data?.pagination ?? {};
+          const pageNum = rawPagination.page ?? 1;
+          const totalPages = rawPagination.totalPages ?? Math.ceil((rawPagination.total ?? 0) / (rawPagination.limit ?? 10));
+
+          setPagination({
+            ...rawPagination,
+            page: pageNum,
+            totalPages,
+            hasPrevPage: pageNum > 1,
+            hasNextPage: pageNum < totalPages
+          });
+        } catch (err) {
+          console.error('Error refreshing posts after updatePost', err);
+        }
+      } catch (e) {
+        console.error('Error handling updatePost event', e);
+      }
+    });
+
+    socket.on('deletePost', async (data) => {
+      console.log('socket event received: deletePost', data);
+      try {
+        const message = data?.message ?? 'A post was deleted';
+        toast.info(message);
+
+        // Refresh first page
+        try {
+          const resp = await api.get('/api/posts?page=1&limit=10');
+          const postsData = resp.data?.posts ?? resp.data?.data ?? resp.data ?? [];
+          setPosts(Array.isArray(postsData) ? postsData : []);
+
+          const rawPagination = resp.data?.pagination ?? {};
+          const pageNum = rawPagination.page ?? 1;
+          const totalPages = rawPagination.totalPages ?? Math.ceil((rawPagination.total ?? 0) / (rawPagination.limit ?? 10));
+
+          setPagination({
+            ...rawPagination,
+            page: pageNum,
+            totalPages,
+            hasPrevPage: pageNum > 1,
+            hasNextPage: pageNum < totalPages
+          });
+        } catch (err) {
+          console.error('Error refreshing posts after deletePost', err);
+        }
+      } catch (e) {
+        console.error('Error handling deletePost event', e);
+      }
     });
 
     // Listen for connection errors
@@ -42,6 +137,9 @@ const Dashboard = () => {
       socket.off('connect');
       socket.off('disconnect');
       socket.off('connect_error');
+      socket.off('newPost');
+      socket.off('updatePost');
+      socket.off('deletePost');
       socket.disconnect();
     };
   }, []);
@@ -141,40 +239,43 @@ const Dashboard = () => {
           </div>
         ) : (
           <>
-            {posts.map((post) => (
-              <div key={post._id} style={postCardStyle}>
-                {post.coverImage && (
-                  <img
-                    src={post.coverImage}
-                    alt={`Cover image for ${post.title}`}
-                    style={coverImageStyle}
-                  />
-                )}
-                <h3>{post.title}</h3>
-                <p style={contentPreviewStyle}>
-                  {post.content.substring(0, 150)}...
-                </p>
-                <div style={actionsStyle}>
-                  <Link to={`/edit/${post._id}`}>
-                    <button style={editButtonStyle}>
-                      Edit
+            {posts.map((post) => {
+              if (!post || !post._id) return null;
+
+              return (
+                <div key={post._id} style={postCardStyle}>
+                  {post.coverImage && (
+                    <img
+                      src={post.coverImage}
+                      alt={`Cover image for ${post?.title ?? ''}`}
+                      style={coverImageStyle}
+                    />
+                  )}
+
+                  <h3>{post?.title ?? 'Untitled'}</h3>
+
+                  <p style={contentPreviewStyle}>
+                    {post?.content ? `${post.content.substring(0, 150)}...` : ''}
+                  </p>
+
+                  <div style={actionsStyle}>
+                    <Link to={`/edit/${post._id}`}>
+                      <button style={editButtonStyle}>Edit</button>
+                    </Link>
+
+                    <button onClick={() => handleDelete(post._id)} style={deleteButtonStyle}>
+                      Delete
                     </button>
-                  </Link>
-                  
-                  <button 
-                    onClick={() => handleDelete(post._id)}
-                    style={deleteButtonStyle}
-                  >
-                    Delete
-                  </button>
+                  </div>
+
+                  <div style={metaStyle}>
+                    <span>{post?.category ?? ''}</span>
+                    <span>{post?.status ?? ''}</span>
+                    <span>{post?.createdAt ? new Date(post.createdAt).toLocaleDateString() : ''}</span>
+                  </div>
                 </div>
-                <div style={metaStyle}>
-                  <span>{post.category}</span>
-                  <span>{post.status}</span>
-                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Pagination Controls */}
             <div style={paginationStyle}>

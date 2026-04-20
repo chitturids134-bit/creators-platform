@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { setIO } from './utils/socket.js';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/database.js';
@@ -82,3 +83,6 @@ httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`🔌 Socket.io ready for connections`);
 });
+
+// Make io available to controllers
+setIO(io);

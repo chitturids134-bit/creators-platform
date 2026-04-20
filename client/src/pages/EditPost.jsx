@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import ImageUpload from '../components/ImageUpload';
 import { toast } from 'react-toastify';
 
 const EditPost = () => {
@@ -16,6 +17,9 @@ const EditPost = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [coverImageUrl, setCoverImageUrl] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   // Fetch post data when component mounts
   useEffect(() => {
@@ -25,16 +29,27 @@ const EditPost = () => {
   const fetchPost = async () => {
     try {
       const response = await api.get(`/api/posts/${id}`);
-      const post = response.data.data;
-      
-      // Pre-fill form with existing data
+      // Prefer common response shapes: response.data.data, response.data.post, then response.data
+      const post = response.data?.data ?? response.data?.post ?? response.data;
+
+      // If API didn't return post data, surface a friendly error instead of crashing
+      if (!post) {
+        setError('Post not found');
+        setIsLoading(false);
+        return;
+      }
+
+      // Pre-fill form with existing data (use empty-string fallbacks)
       setFormData({
-        title: post.title,
-        content: post.content,
-        category: post.category,
-        status: post.status
+        title: post.title ?? '',
+        content: post.content ?? '',
+        category: post.category ?? '',
+        status: post.status ?? ''
       });
-      
+
+      // Populate existing cover image URL if present
+      setCoverImageUrl(post.coverImage ?? null);
+
       setIsLoading(false);
     } catch (err) {
       console.error('Fetch error:', err);
@@ -56,7 +71,9 @@ const EditPost = () => {
     setIsSaving(true);
 
     try {
-      const response = await api.put(`/api/posts/${id}`, formData);
+      // Include coverImage in payload (allow null to remove)
+      const payload = { ...formData, coverImage: coverImageUrl };
+      const response = await api.put(`/api/posts/${id}`, payload);
       
       if (response.data.success) {
         // Redirect to dashboard after successful update
@@ -67,6 +84,24 @@ const EditPost = () => {
       const msg = err.response?.data?.message || 'Failed to update post';
       setError(msg);
       setIsSaving(false);
+    }
+  };
+
+  // Upload handler for ImageUpload component
+  const handleUpload = async (formDataToUpload) => {
+    setUploading(true);
+    setUploadError('');
+
+    try {
+      const response = await api.post('/api/upload', formDataToUpload);
+      setCoverImageUrl(response.data.url);
+      // clear any previous error
+      setUploadError('');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Image upload failed';
+      setUploadError(msg);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -84,6 +119,17 @@ const EditPost = () => {
         <h1>Edit Post</h1>
         
         {error && <div style={errorStyle}>{error}</div>}
+
+        {/* Image preview + controls */}
+        {coverImageUrl && (
+          <div style={{ marginBottom: '1rem' }}>
+            <p>Current image:</p>
+            <img src={coverImageUrl} alt={formData.title} style={{ width: '240px', height: '160px', objectFit: 'cover', borderRadius: '6px' }} />
+            <div style={{ marginTop: '0.5rem' }}>
+              <button type="button" onClick={() => setCoverImageUrl(null)} style={cancelButtonStyle}>Remove image</button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={formStyle}>
           {/* Title */}
@@ -160,10 +206,15 @@ const EditPost = () => {
             </button>
           </div>
         </form>
+        {uploadError && (
+          <p style={{ color: 'red' }}>{uploadError}</p>
+        )}
+        <ImageUpload onUpload={handleUpload} />
       </div>
     </div>
   );
 };
+
 
 const containerStyle = {
   minHeight: '80vh',
@@ -261,6 +312,19 @@ const loadingStyle = {
   minHeight: '80vh',
   fontSize: '1.2rem',
   color: '#666',
+};
+
+const errorPageStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '60vh',
+  fontSize: '1.1rem',
+  color: '#333',
+  backgroundColor: '#fff8f8',
+  padding: '1rem',
+  borderRadius: '6px',
+  border: '1px solid #f5c2c7',
 };
 
 export default EditPost;

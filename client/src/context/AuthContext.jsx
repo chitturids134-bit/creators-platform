@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import socket from '../services/socket';
 
 const AuthContext = createContext(null);
 
@@ -18,6 +19,12 @@ export const AuthProvider = ({ children }) => {
       try {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+        // Ensure socket connects for authenticated sessions
+        try {
+          socket.connect();
+        } catch (e) {
+          console.warn('Socket connect failed on auth init', e);
+        }
       } catch (error) {
         console.error('Error parsing user data:', error);
         // Clear invalid data
@@ -38,6 +45,13 @@ export const AuthProvider = ({ children }) => {
     // Store in localStorage
     localStorage.setItem('token', userToken);
     localStorage.setItem('user', JSON.stringify(userData));
+
+    // Connect socket after login
+    try {
+      socket.connect();
+    } catch (e) {
+      console.warn('Socket connect failed on login', e);
+    }
   };
 
   // Logout function
@@ -51,6 +65,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     
     // Redirect to login
+    try {
+      socket.disconnect();
+    } catch (e) {
+      console.warn('Socket disconnect failed on logout', e);
+    }
+
     navigate('/login');
   };
 
