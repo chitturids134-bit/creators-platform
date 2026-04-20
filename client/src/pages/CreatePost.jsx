@@ -15,6 +15,9 @@ const CreatePost = () => {
   const [error, setError] = useState('');
   const [image, setImage] = useState(null);
   const navigate = useNavigate();
+  const [uploading, setUploading] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState(null);
+  const [uploadError, setUploadError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -23,28 +26,61 @@ const CreatePost = () => {
     });
   };
 
-  const handleUpload = (formData) => {
-    // In Lesson 4.7, you'll send this formData to the backend
-    // For now, just log it to confirm it works
-    console.log('FormData ready:', formData.get('image'));
+  const handleUpload = async (formData) => {
+    setUploading(true);
+    setUploadError('');
+
+    try {
+      const response = await api.post('/api/upload', formData);
+      // response.data should be: { success: true, url: "...", publicId: "..." }
+
+      setCoverImageUrl(response.data.url);
+      toast.success('Image uploaded successfully!');
+    } catch (error) {
+      const message = error.response?.data?.message || 'Image upload failed';
+      setUploadError(message);
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const { title, content } = formData;
+
+    // Basic validation
+    if (!title || !content) {
+      toast.error('Title and content are required');
+      return;
+    }
+
     setError('');
     setIsLoading(true);
 
     try {
-      const response = await api.post('/api/posts', formData);
-      
+      const postData = {
+        ...formData,
+        coverImage: coverImageUrl // null if no image uploaded
+      };
+
+      const response = await api.post('/api/posts', postData);
+
       if (response.data.success) {
-        // Redirect to dashboard after successful creation
         toast.success('Post created successfully');
+
+        // Reset the form
+        setFormData({ title: '', content: '', category: 'Technology', status: 'draft' });
+        setCoverImageUrl(null);
+
+        // Navigate to dashboard
         navigate('/dashboard');
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Failed to create post';
       setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -116,14 +152,19 @@ const CreatePost = () => {
             </select>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={isLoading}
+          <button
+            type="submit"
+            disabled={isLoading || uploading}
             style={buttonStyle}
           >
-            {isLoading ? 'Creating...' : 'Create Post'}
+            {isLoading ? 'Creating...' : uploading ? 'Uploading...' : 'Create Post'}
           </button>
         </form>
+        {uploadError && (
+          <p style={{ color: 'red' }}>
+            {uploadError}
+          </p>
+        )}
         <ImageUpload onUpload={handleUpload} />
       </div>
     </div>

@@ -6,7 +6,7 @@ import ApiError from '../utils/ApiError.js';
 // @access  Private
 export const createPost = async (req, res, next) => {
   try {
-    const { title, content, category, status } = req.body;
+    const { title, content, category, status, coverImage } = req.body;
 
     // Validate required fields
     if (!title || !content) {
@@ -19,6 +19,7 @@ export const createPost = async (req, res, next) => {
       content,
       category,
       status,
+      coverImage,
       author: req.user._id // From protect middleware
     });
 
@@ -128,12 +129,13 @@ export const updatePost = async (req, res, next) => {
     }
 
     // Update fields
-    const { title, content, category, status } = req.body;
+    const { title, content, category, status, coverImage } = req.body;
     
     if (title) post.title = title;
     if (content) post.content = content;
     if (category) post.category = category;
     if (status) post.status = status;
+    if (coverImage) post.coverImage = coverImage;
 
     // Save updated post
     const updatedPost = await post.save();
