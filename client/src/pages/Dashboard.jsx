@@ -130,6 +130,13 @@ const Dashboard = () => {
           <>
             {posts.map((post) => (
               <div key={post._id} style={postCardStyle}>
+                {post.coverImage && (
+                  <img
+                    src={post.coverImage}
+                    alt={`Cover image for ${post.title}`}
+                    style={coverImageStyle}
+                  />
+                )}
                 <h3>{post.title}</h3>
                 <p style={contentPreviewStyle}>
                   {post.content.substring(0, 150)}...
@@ -273,6 +280,14 @@ const postCardStyle = {
   borderRadius: '8px',
   marginBottom: '1rem',
   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+};
+
+const coverImageStyle = {
+  width: '100%',
+  maxHeight: '220px',
+  objectFit: 'cover',
+  borderRadius: '6px',
+  marginBottom: '0.75rem',
 };
 
 const contentPreviewStyle = {
