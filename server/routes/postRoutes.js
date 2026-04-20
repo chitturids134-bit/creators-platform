@@ -1,6 +1,7 @@
-import express from 'express';
-import { protect } from '../middleware/auth.js';
-import { createPost, getPosts, deletePost, getPostById, updatePost } from '../controllers/postController.js';
+const express = require('express');
+const { protect } = require('../middleware/auth');
+const { createPost, getPosts, deletePost, getPostById, updatePost } = require('../controllers/postController');
+const Post = require('../models/Post');
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.put('/:id', protect, updatePost);
 router.get('/user/:userId', async (req, res) => {
   try {
     const posts = await Post.find({ author: req.params.userId })
-      .populate('author', 'name email avatar')  // ← Add this
+      .populate('author', 'name email avatar')
       .sort({ createdAt: -1 });
     
     res.json({ success: true, posts });
@@ -23,4 +24,4 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

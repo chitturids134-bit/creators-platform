@@ -1,4 +1,4 @@
-import multer from 'multer';
+const multer = require('multer');
 
 const storage = multer.memoryStorage();
 
@@ -9,9 +9,6 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     // file.mimetype will be something like 'image/jpeg' or 'image/png'
-    // cb(null, true) = accept the file
-    // cb(null, false) = reject the file
-    // cb(new Error('message')) = reject with an error
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
@@ -23,4 +20,4 @@ const upload = multer({
   }
 });
 
-export default upload;
+module.exports = upload;

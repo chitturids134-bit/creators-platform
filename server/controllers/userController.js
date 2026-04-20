@@ -1,11 +1,12 @@
-import User from '../models/User.js';
-import bcrypt from 'bcrypt';
-import ApiError from '../utils/ApiError.js';
+const User = require('../models/User');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const ApiError = require('../utils/ApiError');
 
 // @desc    Register a new user
 // @route   POST /api/users/register
 // @access  Public
-export const registerUser = async (req, res, next) => {
+const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
@@ -34,10 +35,23 @@ export const registerUser = async (req, res, next) => {
     user.password = undefined;
 
     // 6. Send success response
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE || '7d' }
+    );
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      data: user
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt
+      }
     });
 
   } catch (error) {
@@ -48,7 +62,7 @@ export const registerUser = async (req, res, next) => {
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Public (will be protected later with auth)
-export const getAllUsers = async (req, res, next) => {
+const getAllUsers = async (req, res, next) => {
   try {
     // Fetch all users, excluding password field
     const users = await User.find().select('-password');
@@ -67,7 +81,7 @@ export const getAllUsers = async (req, res, next) => {
 // @desc    Get single user by ID
 // @route   GET /api/users/:id
 // @access  Public (will be protected later)
-export const getUserById = async (req, res, next) => {
+const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -92,7 +106,7 @@ export const getUserById = async (req, res, next) => {
 // @desc    Update user
 // @route   PUT /api/users/:id
 // @access  Private (will add auth later)
-export const updateUser = async (req, res, next) => {
+const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, email } = req.body;
@@ -128,7 +142,7 @@ export const updateUser = async (req, res, next) => {
 // @desc    Delete user
 // @route   DELETE /api/users/:id
 // @access  Private (will add auth later)
-export const deleteUser = async (req, res, next) => {
+const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -147,4 +161,12 @@ export const deleteUser = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+module.exports = {
+  registerUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser
 };

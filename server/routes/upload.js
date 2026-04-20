@@ -1,7 +1,7 @@
-import express from 'express';
-import { protect } from '../middleware/auth.js';
-import upload from '../middleware/upload.js';
-import cloudinary from '../config/cloudinary.js';
+const express = require('express');
+const { protect } = require('../middleware/auth');
+const upload = require('../middleware/upload');
+const cloudinary = require('../config/cloudinary');
 
 const router = express.Router();
 
@@ -25,8 +25,6 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
   }
 
   // 2. Upload the buffer to Cloudinary
-  // Use your uploadToCloudinary helper here
-  // Hint: pass req.file.buffer
   let cloudinaryResult;
   try {
     cloudinaryResult = await uploadToCloudinary(req.file.buffer);
@@ -36,8 +34,6 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
   }
 
   // 3. Return the secure_url
-  // Cloudinary's response contains many fields.
-  // You only need: result.secure_url and result.public_id
   res.json({ success: true, url: cloudinaryResult.secure_url, public_id: cloudinaryResult.public_id });
 });
 
@@ -56,4 +52,4 @@ router.use((error, req, res, next) => {
   });
 });
 
-export default router;
+module.exports = router;

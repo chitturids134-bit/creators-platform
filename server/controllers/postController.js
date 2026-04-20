@@ -1,11 +1,11 @@
-import Post from '../models/Post.js';
-import ApiError from '../utils/ApiError.js';
-import { getIO } from '../utils/socket.js';
+const Post = require('../models/Post');
+const ApiError = require('../utils/ApiError');
+const { getIO } = require('../utils/socket');
 
 // @desc    Create new post
 // @route   POST /api/posts
 // @access  Private
-export const createPost = async (req, res, next) => {
+const createPost = async (req, res, next) => {
   try {
     const { title, content, category, status, coverImage } = req.body;
 
@@ -56,7 +56,7 @@ export const createPost = async (req, res, next) => {
 // @desc    Get posts with pagination
 // @route   GET /api/posts?page=1&limit=10
 // @access  Private
-export const getPosts = async (req, res, next) => {
+const getPosts = async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = Math.max(parseInt(req.query.limit) || 20, 1);
@@ -92,7 +92,7 @@ export const getPosts = async (req, res, next) => {
 // @desc    Delete post
 // @route   DELETE /api/posts/:id
 // @access  Private
-export const deletePost = async (req, res, next) => {
+const deletePost = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -137,7 +137,7 @@ export const deletePost = async (req, res, next) => {
 // @desc    Update post
 // @route   PUT /api/posts/:id
 // @access  Private
-export const updatePost = async (req, res, next) => {
+const updatePost = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id);
 
@@ -198,7 +198,7 @@ export const updatePost = async (req, res, next) => {
 // @desc    Get single post by ID
 // @route   GET /api/posts/:id
 // @access  Private
-export const getPostById = async (req, res, next) => {
+const getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('author', 'name email avatar')
@@ -213,4 +213,12 @@ export const getPostById = async (req, res, next) => {
     console.error('Get post by id error:', error);
     next(error);
   }
+};
+
+module.exports = {
+  createPost,
+  getPosts,
+  deletePost,
+  updatePost,
+  getPostById
 };

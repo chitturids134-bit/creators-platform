@@ -1,12 +1,12 @@
-import User from '../models/User.js';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import ApiError from '../utils/ApiError.js';
+const User = require('../models/User');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const ApiError = require('../utils/ApiError');
 
 // @desc    Login user and return JWT
 // @route   POST /api/auth/login
 // @access  Public
-export const loginUser = async (req, res, next) => {
+const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -57,3 +57,5 @@ export const loginUser = async (req, res, next) => {
     next(error);
   }
 };
+
+module.exports = { loginUser };
