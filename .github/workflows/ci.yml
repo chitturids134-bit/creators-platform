@@ -1,3 +1,4 @@
+# CI/CD Pipeline: Runs tests on every push/PR, deploys only on push to main
 name: CI/CD Pipeline
 
 on:
