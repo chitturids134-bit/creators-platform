@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
       - name: Run server tests
         run: |
           cd server
-          npm test
+          npm test -- --watchAll=false
         env:
           MONGO_URI_TEST: ${{ secrets.MONGO_URI_TEST }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -40,4 +40,26 @@ jobs:
       - name: Run client tests
         run: |
           cd client
-          npm test
+          npm test -- --watchAll=false
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Render
+        run: |
+          curl -X GET "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+      - name: Deploy to Vercel
+        run: |
+          npm install -g vercel
+          cd client
+          vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
