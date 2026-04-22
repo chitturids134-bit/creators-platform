@@ -41,7 +41,7 @@ jobs:
       - name: Run client tests
         run: |
           cd client
-          npm test -- --watchAll=false
+          npm test
 
   deploy:
     needs: test
